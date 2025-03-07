@@ -47,6 +47,7 @@ smart-monitoring-system/
 │── 📂 dashboard_pi/                 # Dashboard Raspberry Pi (MERN stack, UI, storage)
 │    ├── 📂 backend/                  # Express.js API & MQTT processing
 │    │    ├── routes/                 # API endpoints
+│    │    ├── controllers/            # Main logic for API endpoints
 │    │    ├── models/                 # MongoDB schemas for logs & users
 │    │    ├── services/               # MQTT & Telegram handlers
 │    │    ├── server.js               # Main Express.js backend

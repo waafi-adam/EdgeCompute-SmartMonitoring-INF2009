@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import UserModal from "./UserModal";
 
-import { BACKEND_BASE_URL } from "../config";
+import { API_BASE_URL, BACKEND_BASE_URL } from "../config";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -62,11 +62,11 @@ const UserManagement = () => {
       if (newUser.voice) formData.append("voice", newUser.voice);
 
       if (editingUser) {
-        await axios.put(`${API_BASE_URL}/${editingUser._id}`, formData, {
+        await axios.put(`${BACKEND_BASE_URL}/api/users/${editingUser._id}`, formData, {
           headers: { "Content-Type": "multipart/form-data" }
         });
       } else {
-        await axios.post(API_BASE_URL, formData, {
+        await axios.post(`${BACKEND_BASE_URL}/api/users`, formData, {
           headers: { "Content-Type": "multipart/form-data" }
         });
       }
@@ -88,7 +88,7 @@ const UserManagement = () => {
 
   const handleDeleteUser = async (id) => {
     try {
-      await axios.delete(`${API_BASE_URL}/${id}`);
+      await axios.delete(`${BACKEND_BASE_URL}/api/users/${id}`);
       fetchUsers();
     } catch (err) {
       console.error("Error deleting user:", err);
