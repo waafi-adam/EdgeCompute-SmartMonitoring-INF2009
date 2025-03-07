@@ -23,13 +23,15 @@ const AlertPanel = () => {
   return (
     <div className="bg-white p-4 rounded-lg shadow">
       <h2 className="text-xl font-bold mb-4">Alert Panel</h2>
-      <ul>
-        {alerts.map((alert) => (
-          <li key={alert.id} className="border-b py-2">
-            {alert.message} <span className="text-gray-500 text-sm">({alert.time})</span>
-          </li>
-        ))}
-      </ul>
+      <div className="h-60 overflow-y-auto">
+        <ul>
+          {alerts.map((alert) => (
+            <li key={alert.id} className="border-b py-2">
+              {alert.message} <span className="text-gray-500 text-sm">({alert.time})</span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 };

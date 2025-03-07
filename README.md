@@ -180,7 +180,3 @@ For detailed project documentation, refer to **`docs/DesignDocument_Team18.pdf`*
 This project is licensed under **MIT License**.
 
 ---
-
-### **🚀 Ready to Deploy?**
-
-This **modular and scalable** system ensures **real-time security monitoring** with **AI-driven recognition**. Let us know if you need any modifications! 🎯
