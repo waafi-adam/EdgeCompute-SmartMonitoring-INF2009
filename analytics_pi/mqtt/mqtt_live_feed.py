@@ -3,10 +3,10 @@ import paho.mqtt.client as mqtt
 import time
 import base64
 import numpy as np
-from mqtt_config import BROKER_IP, BROKER_PORT, BROKER_TOPIC_LIVE_FEED, BROKER_CLIENT_ID
+from .mqtt_config import BROKER_IP, BROKER_PORT, BROKER_TOPIC_LIVE_FEED, BROKER_CLIENT_ID
 
 # Initialize MQTT client
-client = mqtt.Client(BROKER_CLIENT_ID)
+client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION1, client_id=BROKER_CLIENT_ID)
 client.connect(BROKER_IP, BROKER_PORT, 60)
 
 # Initialize camera

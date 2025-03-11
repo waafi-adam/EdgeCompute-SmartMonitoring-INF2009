@@ -7,10 +7,7 @@ WORKDIR /app
 # Copy package.json and package-lock.json before installing dependencies
 COPY package.json package-lock.json ./
 
-# Explicitly install sqlite3
-RUN npm install sqlite3 --build-from-source
-
-# Install all other dependencies
+# Install better-sqlite3 instead of sqlite3
 RUN npm install --omit=dev
 
 # Copy application files
