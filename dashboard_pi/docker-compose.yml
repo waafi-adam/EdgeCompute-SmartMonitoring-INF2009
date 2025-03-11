@@ -1,30 +1,18 @@
 version: '3.8'
 
 services:
-  mongodb:
-    image: mongo:3.2  # ✅ Use MongoDB 4.2 (works on Raspberry Pi)
-    container_name: mongodb
-    restart: always
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb_data:/data/db
-    command: mongod --bind_ip_all --nojournal  # ✅ Prevent journal issues on Raspberry Pi
-
-
   backend:
     build: ./backend
     container_name: dashboard_backend
     restart: always
-    depends_on:
-      - mongodb
     ports:
       - "5000:5000"
-    environment:
-      - PORT=5000
-      - MONGO_URI=mongodb://mongodb:27017/smart_monitoring
     volumes:
       - ./backend:/app
+      - ./backend/database:/app/database  # Persist SQLite DB
+    environment:
+      - PORT=5000
+      - SQLITE_DB=database/smart_monitoring.db
     command: ["node", "server.js"]
 
   frontend:
@@ -35,10 +23,10 @@ services:
       - backend
     ports:
       - "5173:5173"
-    environment:
-      - REACT_APP_BACKEND_URL=http://backend:5000
     volumes:
       - ./frontend:/app
+    environment:
+      - REACT_APP_BACKEND_URL=http://backend:5000
     command: ["npm", "run", "dev"]
 
   mqtt:
@@ -53,5 +41,3 @@ services:
       - ./mosquitto/data:/mosquitto/data
       - ./mosquitto/log:/mosquitto/log
 
-volumes:
-  mongodb_data:

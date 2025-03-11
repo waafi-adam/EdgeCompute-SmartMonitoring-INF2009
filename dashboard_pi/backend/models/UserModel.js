@@ -1,13 +1,35 @@
-import mongoose from "mongoose";
+import { getDBConnection } from "../database/db.js";
 
-const userSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  isPresent: { type: Boolean, default: true },
-  role: { type: String, required: false },
-  phone: { type: String, required: false },
-  email: { type: String, required: false },
-  photo: { type: String, required: false }, // Stores image URL
-  voice: { type: String, required: false }, // Stores audio URL
-});
+export async function getAllUsers() {
+  const db = await getDBConnection();
+  return db.all("SELECT * FROM users");
+}
 
-export default mongoose.model("User", userSchema);
+export async function createUser(user) {
+  const db = await getDBConnection();
+  const { name, isPresent, role, phone, email, photo, voice } = user;
+
+  const result = await db.run(
+    "INSERT INTO users (name, isPresent, role, phone, email, photo, voice) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    [name, isPresent, role, phone, email, photo, voice]
+  );
+
+  return { id: result.lastID, ...user };
+}
+
+export async function updateUser(id, user) {
+  const db = await getDBConnection();
+  const { name, isPresent, role, phone, email, photo, voice } = user;
+
+  await db.run(
+    "UPDATE users SET name=?, isPresent=?, role=?, phone=?, email=?, photo=?, voice=? WHERE id=?",
+    [name, isPresent, role, phone, email, photo, voice, id]
+  );
+
+  return { id, ...user };
+}
+
+export async function deleteUser(id) {
+  const db = await getDBConnection();
+  await db.run("DELETE FROM users WHERE id=?", [id]);
+}
