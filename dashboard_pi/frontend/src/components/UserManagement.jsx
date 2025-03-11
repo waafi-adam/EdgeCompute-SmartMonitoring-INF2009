@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import UserModal from "./UserModal";
 
-import { API_BASE_URL, BACKEND_BASE_URL } from "../config";
+import { BACKEND_BASE_URL } from "../config";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
