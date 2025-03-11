@@ -8,10 +8,10 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
-  server: {
+    server: {
     host: true, // Allow access from any network
     strictPort: true, // Ensure Vite doesn't pick random ports
     port: 5173, // Default Vite port, change if needed
-    allowedHosts: [`"waafiadam-pi.local"`], // Allow this hostname
+    allowedHosts: ["waafiadam-pi.local"], // Allow this hostname
   },
 });
