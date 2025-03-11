@@ -1,23 +1,26 @@
-# Use Node.js 22 on Debian Bullseye (compatible with aarch64)
+# Use Node.js 22 on Debian Bullseye (Raspberry Pi compatible)
 FROM node:22-bullseye
 
-# Set the working directory inside the container
+# Set working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json first to leverage Docker caching
+# Copy package.json and package-lock.json before installing dependencies
 COPY package.json package-lock.json ./
 
-# Ensure sqlite3 is installed properly
-RUN npm install --omit=dev sqlite3
+# Explicitly install sqlite3
+RUN npm install sqlite3 --build-from-source
 
-# Copy all backend files into the container
+# Install all other dependencies
+RUN npm install --omit=dev
+
+# Copy application files
 COPY . .
 
-# Ensure the database directory exists
+# Ensure database directory exists
 RUN mkdir -p /app/database
 
-# Expose the application port
+# Expose backend port
 EXPOSE 5000
 
-# Run the server
+# Start the server
 CMD ["node", "server.js"]
