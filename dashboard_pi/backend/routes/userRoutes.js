@@ -6,7 +6,8 @@ import {
   getAllUsers,
   createUser,
   updateUser,
-  deleteUser
+  deleteUser,
+  deleteAllUsers 
 } from "../controllers/UserController.js";
 
 const router = express.Router();
@@ -34,5 +35,6 @@ router.get("/", getAllUsers);
 router.post("/", upload.fields([{ name: "photo" }, { name: "voice" }]), createUser);
 router.put("/:id", upload.fields([{ name: "photo" }, { name: "voice" }]), updateUser);
 router.delete("/:id", deleteUser);
+router.delete("/all", deleteAllUsers); // DELETE all users
 
 export default router;

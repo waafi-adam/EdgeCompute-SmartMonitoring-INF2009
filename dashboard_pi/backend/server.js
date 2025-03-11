@@ -5,9 +5,9 @@ import cors from "cors";
 import dotenv from "dotenv";
 import userRoutes from "./routes/userRoutes.js";
 import path from "path";
-import { getLocalIP } from "./utils/networkUtils.js";  // ✅ Import modularized function
-import { setupSocket } from "./services/mqttService.js";  // Import MQTT handler
-import { initDB } from "./database/db.js"; // ✅ Initialize SQLite
+import { getLocalIP } from "./utils/networkUtils.js"; // ✅ Import modularized function
+import { setupSocket } from "./services/mqttService.js"; // Import MQTT handler
+import db from "./database/db.js"; // ✅ Directly import database
 
 dotenv.config();
 
@@ -18,7 +18,6 @@ const io = new Server(server, {
 });
 
 setupSocket(io); // Initialize WebSocket
-initDB(); // ✅ Initialize SQLite
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

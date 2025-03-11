@@ -103,7 +103,7 @@ const UserManagement = () => {
       </button>
       <ul className="mt-4 h-60 overflow-y-auto border p-2 rounded">
         {users.map((user) => (
-          <li key={user._id} className="border-b py-2 flex justify-between items-center">
+          <li key={user.id} className="border-b py-2 flex justify-between items-center"> {/* Ensure id is used */}
             <div>
               <p><strong>{user.name}</strong> ({user.role || "No Role"})</p>
               {user.phone && <p className="text-sm text-gray-600">📞 {user.phone}</p>}
