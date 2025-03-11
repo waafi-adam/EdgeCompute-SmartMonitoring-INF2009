@@ -1,11 +1,13 @@
-# Smart Monitoring System (Team 18)
+# **Smart Monitoring System (Team 18)**
 
 This project is an **IoT-based smart monitoring solution** utilizing two **Raspberry Pi 4** devices:
 
 - **Dashboard Pi (MERN Stack)**: Manages user interactions, displays live video, logs alerts, and integrates Telegram notifications.
 - **Analytics Pi (AI Processing)**: Performs **object detection, facial recognition, audio monitoring, and gesture recognition**, then sends results to Dashboard Pi via **MQTT**.
 
-## 📌 **System Overview**
+---
+
+## **📌 System Overview**
 
 The system consists of multiple **sensors and AI models** that detect environmental changes and respond accordingly.
 
@@ -32,7 +34,7 @@ The system consists of multiple **sensors and AI models** that detect environmen
 ### **📩 Telegram Notifications**
 
 - When an **alert is triggered**, it is:
-  1. **Logged into MongoDB**.
+  1. **Logged into SQLite**.
   2. **Displayed on the alert panel**.
   3. **Sent as a Telegram message** via the bot.
 
@@ -48,13 +50,13 @@ smart-monitoring-system/
 │    ├── 📂 backend/                  # Express.js API & MQTT processing
 │    │    ├── routes/                 # API endpoints
 │    │    ├── controllers/            # Main logic for API endpoints
-│    │    ├── models/                 # MongoDB schemas for logs & users
+│    │    ├── models/                 # SQLite database handlers
 │    │    ├── services/               # MQTT & Telegram handlers
 │    │    ├── server.js               # Main Express.js backend
+│    │    ├── database/               # Local SQLite storage
 │    ├── 📂 frontend/                  # React.js dashboard UI
 │    │    ├── src/                     # Components & pages
 │    │    ├── package.json             # React dependencies
-│    ├── 📂 database/                  # Local MongoDB storage
 │
 │── 📂 analytics_pi/                   # AI Processing Raspberry Pi (Machine Learning)
 │    ├── 📂 mqtt/                       # MQTT clients for AI processing
@@ -98,9 +100,124 @@ smart-monitoring-system/
 - **Power Supply for Raspberry Pi**
 - **Local Network Connection (WiFi or Ethernet)**
 
-### **🖥️ Setting Up Dashboard Pi** (MERN Stack, MongoDB, MQTT)
+---
 
-#### **1️⃣ Install Dependencies**
+### **🌐 Naming the Dashboard Pi for Network Access**
+
+The **Dashboard Pi** must be named **`dashboard-pi`** to ensure that it can be accessed as `dashboard-pi.local` on the local network.
+
+#### **🆕 Setting the Name When Installing the OS (Recommended)**
+
+1. **Flash the Raspberry Pi OS** using **Raspberry Pi Imager** (from [here](https://www.raspberrypi.com/software/)).
+2. **Before writing the image**, click the ⚙️ **Advanced Options**.
+3. Enable **Set hostname** and enter:
+   ```
+   dashboard-pi
+   ```
+4. Complete the OS installation, insert the SD card, and boot the Raspberry Pi.
+5. Verify the hostname by running:
+   ```bash
+   hostname
+   ```
+   It should return:
+   ```
+   dashboard-pi
+   ```
+6. Now, you can access the Pi using:
+   ```
+   ping dashboard-pi.local
+   ```
+
+---
+
+#### **🔄 Changing the Hostname on an Already Installed OS**
+
+If you've already installed the OS and need to rename your Raspberry Pi:
+
+1️⃣ Open a terminal and check the current hostname:
+
+```bash
+hostname
+```
+
+2️⃣ Edit the **hostname file**:
+
+```bash
+sudo nano /etc/hostname
+```
+
+Replace the existing name with:
+
+```
+dashboard-pi
+```
+
+3️⃣ Also, update **hosts file**:
+
+```bash
+sudo nano /etc/hosts
+```
+
+Find the line:
+
+```
+127.0.1.1  raspberrypi
+```
+
+Change it to:
+
+```
+127.0.1.1  dashboard-pi
+```
+
+4️⃣ Save the file (**Ctrl+X → Y → Enter**) and reboot:
+
+```bash
+sudo reboot
+```
+
+5️⃣ After rebooting, verify with:
+
+```bash
+hostname
+ping dashboard-pi.local
+```
+
+Now, the Dashboard Pi should be accessible via `dashboard-pi.local`.
+
+Since the **Analytics Pi** connects to the **MQTT broker running on the Dashboard Pi**, the hostname **must be `dashboard-pi`** for correct operation.
+
+✅ **All connections in the project (MQTT broker, API, website) rely on**:
+
+```
+dashboard-pi.local
+```
+
+This ensures that **the broker, frontend, and backend communicate seamlessly** without needing manual IP configurations.
+
+---
+
+### **🖥️ Setting Up Dashboard Pi** (MERN Stack, SQLite, MQTT)
+
+The **Dashboard Pi** handles the **web interface, database, and MQTT broker**.
+
+#### **1️⃣ Install Node.js**
+
+If Node.js is not installed, run:
+
+```bash
+sudo apt update
+sudo apt install -y nodejs npm
+```
+
+Verify installation:
+
+```bash
+node -v
+npm -v
+```
+
+#### **2️⃣ Install Dependencies**
 
 ```bash
 cd dashboard_pi/backend
@@ -109,14 +226,39 @@ cd ../frontend
 npm install
 ```
 
-#### **2️⃣ Start MongoDB**
+#### **3️⃣ Install and Configure Mosquitto MQTT Broker**
+
+Since the **Dashboard Pi** is the MQTT broker, install Mosquitto:
 
 ```bash
-sudo systemctl start mongod
+sudo apt update
+sudo apt install -y mosquitto mosquitto-clients
+```
+
+Enable and start Mosquitto:
+
+```bash
+sudo systemctl enable mosquitto
+sudo systemctl start mosquitto
+```
+
+Check if it's running:
+
+```bash
+systemctl status mosquitto
+```
+
+If `Active: active (running)` appears, Mosquitto is set up.
+
+#### **4️⃣ Initialize SQLite Database**
+
+```bash
 node dashboard_pi/database/database_setup.js
 ```
 
-#### **3️⃣ Start Dashboard Services (Backend & Frontend)**
+This creates the SQLite database and necessary tables.
+
+#### **5️⃣ Start Dashboard Services (Backend & Frontend)**
 
 ```bash
 cd dashboard_pi/backend
@@ -128,18 +270,51 @@ cd ../frontend
 npm start  # Starts React.js frontend
 ```
 
+#### **6️⃣ Test MQTT Broker**
+
+Open **two terminal windows**:
+
+- **Terminal 1 (Subscribe to a topic)**:
+  ```bash
+  mosquitto_sub -h localhost -t "test/topic"
+  ```
+- **Terminal 2 (Publish a message to the topic)**:
+  ```bash
+  mosquitto_pub -h localhost -t "test/topic" -m "Hello MQTT!"
+  ```
+
+If Terminal 1 receives `"Hello MQTT!"`, the MQTT broker is working.
+
 ---
 
 ### **🖥️ Setting Up Analytics Pi** (AI Processing, Sensors, MQTT)
 
-#### **1️⃣ Install Dependencies**
+The **Analytics Pi** is responsible for **AI processing, sensor monitoring, and sending alerts to the Dashboard Pi**.
+
+#### **1️⃣ Install Python**
+
+If Python is not installed, run:
+
+```bash
+sudo apt update
+sudo apt install -y python3 python3-pip
+```
+
+Verify installation:
+
+```bash
+python3 --version
+pip3 --version
+```
+
+#### **2️⃣ Install Dependencies**
 
 ```bash
 cd analytics_pi
 pip install -r requirements.txt
 ```
 
-#### **2️⃣ Start Analytics Services**
+#### **3️⃣ Start Analytics Services**
 
 ```bash
 python analytics_main.py  # Runs AI models, MQTT communication, and sensors asynchronously
