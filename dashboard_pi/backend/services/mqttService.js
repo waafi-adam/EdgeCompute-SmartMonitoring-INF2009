@@ -1,8 +1,9 @@
 import mqtt from "mqtt";
 import { Server } from "socket.io";
+import { getLocalIP } from "../utils/networkUtils.js";  // ✅ Use modularized function
 
-// MQTT Configuration
-const MQTT_BROKER = "mqtt://waafiadam-pi.local";  // Replace with your Dashboard Pi IP
+const LOCAL_IP = getLocalIP();
+const MQTT_BROKER = `mqtt://${LOCAL_IP}`;  // ✅ Use dynamically obtained IP
 const MQTT_TOPIC = "live_feed";
 
 // Initialize WebSocket
@@ -15,7 +16,7 @@ export const setupSocket = (io) => {
 const client = mqtt.connect(MQTT_BROKER);
 
 client.on("connect", () => {
-  console.log("✅ Connected to MQTT Broker");
+  console.log(`✅ Connected to MQTT Broker at ${MQTT_BROKER}`);
   client.subscribe(MQTT_TOPIC);
 });
 
