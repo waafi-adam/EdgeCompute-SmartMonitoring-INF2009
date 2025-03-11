@@ -2,14 +2,15 @@ version: '3.8'
 
 services:
   mongodb:
-    image: arm64v8/mongo:4.4  # ✅ Use ARM64v8 version (for Raspberry Pi)
+    image: arm64v8/mongo:4.2  # ✅ Use MongoDB 4.2 (works on Raspberry Pi)
     container_name: mongodb
     restart: always
     ports:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
-    command: mongod --bind_ip_all --nojournal  # ✅ Prevents journal issues on Raspberry Pi
+    command: mongod --bind_ip_all --nojournal  # ✅ Prevent journal issues on Raspberry Pi
+
 
   backend:
     build: ./backend
