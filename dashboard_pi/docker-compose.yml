@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   mongodb:
-    image: arm64v8/mongo:3.2  # ✅ Use MongoDB 4.2 (works on Raspberry Pi)
+    image: mongo:3.2  # ✅ Use MongoDB 4.2 (works on Raspberry Pi)
     container_name: mongodb
     restart: always
     ports:
