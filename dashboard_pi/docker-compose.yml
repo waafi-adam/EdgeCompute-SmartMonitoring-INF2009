@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  backend:
+    build: ./backend
+    container_name: dashboard_backend
+    restart: always
+    depends_on:
+      - mongodb
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - MONGO_URI=mongodb://mongodb:27017/smart_monitoring
+    volumes:
+      - ./backend:/app
+    command: ["node", "server.js"]
+
+  frontend:
+    build: ./frontend
+    container_name: dashboard_frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+    environment:
+      - REACT_APP_BACKEND_URL=http://backend:5000
+    volumes:
+      - ./frontend:/app
+    command: ["npm", "run", "dev"]
+
+  mqtt:
+    image: eclipse-mosquitto:latest
+    container_name: mosquitto_broker
+    restart: always
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+
+volumes:
+  mongodb_data:
