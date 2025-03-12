@@ -1,39 +1,36 @@
-import db from "../database/db.js";
 import fs from "fs";
 import path from "path";
+import {
+  getAllUsers as fetchUsers,
+  getUserById,
+  createUser as createUserModel,
+  updateUser as updateUserModel,
+  deleteUser as deleteUserModel,
+  deleteAllUsers as deleteAllUsersModel
+} from "../models/UserModel.js";
 
 // Get all users
 export const getAllUsers = (req, res) => {
   try {
-    const users = db.prepare("SELECT * FROM users").all();
-    
-    // Ensure frontend gets 'id' instead of '_id'
+    const users = fetchUsers();
     const formattedUsers = users.map(user => ({ ...user, _id: user.id }));
-    
     res.json(formattedUsers);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-
 // Create a new user
 export const createUser = (req, res) => {
   try {
-    console.log("Received files:", req.files);
-
     const { name, isPresent, role, phone, email } = req.body;
     const photo = req.files?.photo ? `/uploads/${req.files.photo[0].filename}` : null;
     const voice = req.files?.voice ? `/uploads/${req.files.voice[0].filename}` : null;
 
-    const stmt = db.prepare(
-      "INSERT INTO users (name, isPresent, role, phone, email, photo, voice) VALUES (?, ?, ?, ?, ?, ?, ?)"
-    );
-    const result = stmt.run(name, isPresent, role, phone, email, photo, voice);
+    const newUser = createUserModel({ name, isPresent, role, phone, email, photo, voice });
 
-    res.status(201).json({ id: result.lastInsertRowid, name, isPresent, role, phone, email, photo, voice });
+    res.status(201).json(newUser);
   } catch (err) {
-    console.error("Error saving user:", err);
     res.status(400).json({ error: err.message });
   }
 };
@@ -44,89 +41,71 @@ export const updateUser = (req, res) => {
     const { name, isPresent, role, phone, email } = req.body;
     const id = req.params.id;
 
-    // Fetch existing user data
-    const existingUser = db.prepare("SELECT photo, voice FROM users WHERE id=?").get(id);
-    
+    const existingUser = getUserById(id);
+    if (!existingUser) return res.status(404).json({ error: "User not found" });
+
     let photo = existingUser.photo;
     let voice = existingUser.voice;
 
-    // Delete old photo if a new one is uploaded
     if (req.files?.photo) {
-      if (photo) {
-        const oldPhotoPath = path.join(process.cwd(), photo);
-        if (fs.existsSync(oldPhotoPath)) {
-          fs.unlinkSync(oldPhotoPath); // Delete the old photo
-        }
-      }
+      if (photo) fs.unlinkSync(path.join(process.cwd(), photo));
       photo = `/uploads/${req.files.photo[0].filename}`;
     }
 
-    // Delete old voice file if a new one is uploaded
     if (req.files?.voice) {
-      if (voice) {
-        const oldVoicePath = path.join(process.cwd(), voice);
-        if (fs.existsSync(oldVoicePath)) {
-          fs.unlinkSync(oldVoicePath); // Delete the old voice file
-        }
-      }
+      if (voice) fs.unlinkSync(path.join(process.cwd(), voice));
       voice = `/uploads/${req.files.voice[0].filename}`;
     }
 
-    // Update user in the database
-    const stmt = db.prepare(
-      "UPDATE users SET name=?, isPresent=?, role=?, phone=?, email=?, photo=?, voice=? WHERE id=?"
-    );
-    stmt.run(name, isPresent, role, phone, email, photo, voice, id);
+    const updatedUser = updateUserModel(id, { name, isPresent, role, phone, email, photo, voice });
 
-    res.json({ id, name, isPresent, role, phone, email, photo, voice });
+    res.json(updatedUser);
   } catch (err) {
-    console.error("Error updating user:", err);
     res.status(400).json({ error: err.message });
   }
 };
-
 
 // Delete a user
 export const deleteUser = (req, res) => {
   try {
     const id = req.params.id;
+    const existingUser = getUserById(id);
+    if (!existingUser) return res.status(404).json({ error: "User not found" });
 
-    // Fetch the user before deleting
-    const existingUser = db.prepare("SELECT photo, voice FROM users WHERE id=?").get(id);
+    if (existingUser.photo) fs.unlinkSync(path.join(process.cwd(), existingUser.photo));
+    if (existingUser.voice) fs.unlinkSync(path.join(process.cwd(), existingUser.voice));
 
-    if (existingUser) {
-      if (existingUser.photo) {
-        const photoPath = path.join(process.cwd(), existingUser.photo);
-        if (fs.existsSync(photoPath)) {
-          fs.unlinkSync(photoPath); // Delete photo file
-        }
-      }
-
-      if (existingUser.voice) {
-        const voicePath = path.join(process.cwd(), existingUser.voice);
-        if (fs.existsSync(voicePath)) {
-          fs.unlinkSync(voicePath); // Delete voice file
-        }
-      }
-    }
-
-    // Delete user from database
-    db.prepare("DELETE FROM users WHERE id=?").run(id);
+    deleteUserModel(id);
 
     res.json({ message: "User deleted successfully" });
   } catch (err) {
-    console.error("Error deleting user:", err);
     res.status(400).json({ error: err.message });
   }
 };
 
-
+// Delete all users
 export const deleteAllUsers = (req, res) => {
   try {
-    db.prepare("DELETE FROM users").run();
-    res.json({ message: "⚠️ All users have been deleted!" });
+    // Delete all user files before removing users from the database
+    const users = fetchUsers();
+    users.forEach(user => {
+      if (user.photo) {
+        const photoPath = path.join(process.cwd(), user.photo);
+        if (fs.existsSync(photoPath)) fs.unlinkSync(photoPath);
+      }
+      if (user.voice) {
+        const voicePath = path.join(process.cwd(), user.voice);
+        if (fs.existsSync(voicePath)) fs.unlinkSync(voicePath);
+      }
+    });
+
+    // Now delete all users from the database
+    deleteAllUsersModel();
+
+    res.json({ message: "⚠️ All users and associated files have been deleted!" });
   } catch (err) {
     console.error("Error deleting all users:", err);
     res.status(400).json({ error: err.message });
   }
 };
+
