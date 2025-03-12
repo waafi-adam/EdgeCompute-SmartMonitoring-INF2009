@@ -250,24 +250,16 @@ systemctl status mosquitto
 
 If `Active: active (running)` appears, Mosquitto is set up.
 
-#### **4️⃣ Initialize SQLite Database**
-
-```bash
-node dashboard_pi/database/database_setup.js
-```
-
-This creates the SQLite database and necessary tables.
-
 #### **5️⃣ Start Dashboard Services (Backend & Frontend)**
 
 ```bash
 cd dashboard_pi/backend
-node server.js  # Runs backend (includes MQTT handling & Telegram bot)
+node server.js  # Runs backend (includes Database, MQTT handling & Telegram bot)
 ```
 
 ```bash
 cd ../frontend
-npm start  # Starts React.js frontend
+npm run dev  # Starts React.js + Vite frontend
 ```
 
 #### **6️⃣ Test MQTT Broker**
