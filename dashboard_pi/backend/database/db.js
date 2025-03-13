@@ -9,7 +9,7 @@ const DB_PATH = process.env.SQLITE_DB || "database/smart_monitoring.db";
 const db = new Database(DB_PATH);
 db.pragma("journal_mode = WAL"); // Improves performance
 
-// Ensure users table exists
+// Create Users Table
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -20,6 +20,16 @@ db.exec(`
     email TEXT,
     photo TEXT,
     voice TEXT
+  );
+`);
+
+// Create Alerts Table
+db.exec(`
+  CREATE TABLE IF NOT EXISTS alerts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp INTEGER NOT NULL,
+    objects TEXT NOT NULL,
+    image TEXT NOT NULL
   );
 `);
 

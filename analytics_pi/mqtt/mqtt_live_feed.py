@@ -2,25 +2,26 @@ import cv2
 import paho.mqtt.client as mqtt
 import time
 import base64
-import numpy as np
-from .mqtt_config import BROKER_IP, BROKER_PORT, BROKER_TOPIC_LIVE_FEED, BROKER_CLIENT_ID
+from devices.camera_feed import get_camera_frame
+from mqtt_config import BROKER_IP, BROKER_PORT, BROKER_TOPIC_LIVE_FEED
 
 # Initialize MQTT client
-client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION1, client_id=BROKER_CLIENT_ID)
+client = mqtt.Client(client_id="AnalyticsPiLiveFeed")
 client.connect(BROKER_IP, BROKER_PORT, 60)
 
-# Initialize camera
-cap = cv2.VideoCapture(0)  # Use the first available camera
+def start_live_feed():
+    while True:
+        frame = get_camera_frame()
+        if frame is None:
+            continue
 
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        continue
+        # Encode frame as JPEG
+        _, buffer = cv2.imencode(".jpg", frame)
+        encoded_frame = base64.b64encode(buffer).decode()
 
-    # Encode frame as JPEG
-    _, buffer = cv2.imencode(".jpg", frame)
-    encoded_frame = base64.b64encode(buffer).decode()
+        # Publish frame to MQTT
+        client.publish(BROKER_TOPIC_LIVE_FEED, encoded_frame)
+        time.sleep(0.1)
 
-    # Publish frame to MQTT
-    client.publish(BROKER_TOPIC_LIVE_FEED, encoded_frame)
-    time.sleep(0.1)  # Adjust for FPS control
+if __name__ == "__main__":
+    start_live_feed()

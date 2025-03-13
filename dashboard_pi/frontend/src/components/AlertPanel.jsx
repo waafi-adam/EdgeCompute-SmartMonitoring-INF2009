@@ -1,39 +1,53 @@
 import React, { useState, useEffect } from "react";
+import { io } from "socket.io-client";
+import axios from "axios";
+import { BACKEND_BASE_URL } from "../config";
 
-const dummyAlerts = [
-  { id: 1, message: "Unrecognized face detected", time: "2 mins ago" },
-  { id: 2, message: "Object detected: Suspicious package", time: "5 mins ago" },
-];
+const socket = io(BACKEND_BASE_URL);
 
 const AlertPanel = () => {
-  const [alerts, setAlerts] = useState(dummyAlerts);
+    const [alerts, setAlerts] = useState([]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const newAlert = {
-        id: alerts.length + 1,
-        message: "New security alert triggered!",
-        time: "Just now",
-      };
-      setAlerts((prevAlerts) => [newAlert, ...prevAlerts]);
-    }, 10000);
-    return () => clearInterval(interval);
-  }, [alerts]);
+    useEffect(() => {
+        fetchAlerts();  // ✅ Load past alerts when component loads
+        socket.on("new_alert", (alertData) => {
+            setAlerts((prevAlerts) => [alertData, ...prevAlerts]);  // ✅ Real-time update
+        });
 
-  return (
-    <div className="bg-white p-4 rounded-lg shadow">
-      <h2 className="text-xl font-bold mb-4">Alert Panel</h2>
-      <div className="h-60 overflow-y-auto">
-        <ul>
-          {alerts.map((alert) => (
-            <li key={alert.id} className="border-b py-2">
-              {alert.message} <span className="text-gray-500 text-sm">({alert.time})</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
+        return () => {
+            socket.off("new_alert");
+        };
+    }, []);
+
+    const fetchAlerts = async () => {
+        try {
+            const res = await axios.get(`${BACKEND_BASE_URL}/api/alerts`);
+            setAlerts(res.data);
+        } catch (err) {
+            console.error("Error fetching alerts:", err);
+        }
+    };
+
+    return (
+        <div className="bg-white p-4 rounded-lg shadow">
+            <h2 className="text-xl font-bold mb-4">Threat Alerts</h2>
+            <div className="h-60 overflow-y-auto">
+                <ul>
+                    {alerts.map((alert, index) => (
+                        <li key={index} className="border-b py-2">
+                            <strong>⚠️ Threat Detected:</strong> {alert.objects}
+                            <br />
+                            <small className="text-gray-500">
+                                {new Date(alert.timestamp * 1000).toLocaleTimeString()}
+                            </small>
+                            <br />
+                            <img src={alert.image} alt="Threat Image" className="mt-2 w-40 h-auto rounded" />
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        </div>
+    );
 };
 
 export default AlertPanel;

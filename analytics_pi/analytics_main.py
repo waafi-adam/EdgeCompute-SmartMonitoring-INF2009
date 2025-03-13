@@ -1,10 +1,23 @@
 import threading
-from mqtt.mqtt_live_feed import client as live_feed_client
+from mqtt.mqtt_live_feed import start_live_feed
 from mqtt.mqtt_processing import client as processing_client
+from ai_models.object_detection import detect_threats
 
-# Start live feed streaming
-live_feed_thread = threading.Thread(target=live_feed_client.loop_forever)
-processing_thread = threading.Thread(target=processing_client.loop_forever)
+def start_mqtt_processing():
+    processing_client.loop_forever()
+
+def start_ai_models():
+    detect_threats()
+
+# Start all modules in parallel
+live_feed_thread = threading.Thread(target=start_live_feed)
+processing_thread = threading.Thread(target=start_mqtt_processing)
+ai_models_thread = threading.Thread(target=start_ai_models)
 
 live_feed_thread.start()
 processing_thread.start()
+ai_models_thread.start()
+
+live_feed_thread.join()
+processing_thread.join()
+ai_models_thread.join()

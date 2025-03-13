@@ -1,7 +1,10 @@
-BROKER_IP = "dashboard-pi.local"  # Replace with Dashboard Pi IP
+BROKER_IP = "dashboard-pi.local"  # Replace if needed
 BROKER_PORT = 1883
-BROKER_TOPIC_LIVE_FEED = "live_feed"
-BROKER_CLIENT_ID = "AnalyticsPi"
 
-MQTT_USERNAME = "your_mqtt_user"  # Optional
-MQTT_PASSWORD = "your_mqtt_pass"  # Optional
+# Topics
+BROKER_TOPIC_LIVE_FEED = "live_feed"
+BROKER_TOPIC_AI_ALERTS = "ai_alerts"
+
+# MQTT Credentials (Optional)
+MQTT_USERNAME = "your_mqtt_user"
+MQTT_PASSWORD = "your_mqtt_pass"

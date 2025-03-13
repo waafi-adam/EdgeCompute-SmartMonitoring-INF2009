@@ -1,12 +1,14 @@
 import paho.mqtt.client as mqtt
-from mqtt_config import BROKER_IP, BROKER_PORT
+import json
+from mqtt_config import BROKER_IP, BROKER_PORT, BROKER_TOPIC_AI_ALERTS  
 
 def on_connect(client, userdata, flags, rc):
     print("Connected to MQTT broker with result code:", rc)
-    client.subscribe("ai_alerts")
+    client.subscribe(BROKER_TOPIC_AI_ALERTS)
 
 def on_message(client, userdata, msg):
-    print(f"Received message on {msg.topic}: {msg.payload.decode()}")
+    data = json.loads(msg.payload.decode())
+    print(f"🚨 Threat Alert: {data}")
 
 # Initialize MQTT client
 client = mqtt.Client("AnalyticsPiProcessor")
