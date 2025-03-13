@@ -2,8 +2,8 @@ import mqtt from "mqtt";
 import fs from "fs";
 import path from "path";
 import { Server } from "socket.io";
-import db from "../database/db.js";
-import { getLocalIP } from "../utils/networkUtils.js";
+import db from "./database/db.js";
+import { getLocalIP } from "./utils/networkUtils.js";
 
 const LOCAL_IP = getLocalIP();
 const MQTT_BROKER = `mqtt://${LOCAL_IP}`;
