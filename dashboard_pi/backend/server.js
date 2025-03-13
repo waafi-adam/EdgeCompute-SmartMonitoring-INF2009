@@ -1,37 +1,63 @@
-import express from "express";
-import http from "http";
-import { Server } from "socket.io";
-import cors from "cors";
-import dotenv from "dotenv";
-import userRoutes from "./routes/userRoutes.js";
-import alertRoutes from "./routes/alertRoutes.js"; // ✅ Import alert routes
+import mqtt from "mqtt";
+import fs from "fs";
 import path from "path";
-import { getLocalIP } from "./utils/networkUtils.js";
-import { setupSocket } from "./services/mqttService.js"; 
-import db from "./database/db.js";
+import { Server } from "socket.io";
+import db from "../database/db.js";
+import { getLocalIP } from "../utils/networkUtils.js";
 
-dotenv.config();
-
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
-
-setupSocket(io);
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cors({ origin: "*" }));
-
-// Serve static files
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-
-// Use API routes
-app.use("/api/users", userRoutes);
-app.use("/api/alerts", alertRoutes); // ✅ Register alert routes
-
-const PORT = process.env.PORT || 5000;
 const LOCAL_IP = getLocalIP();
+const MQTT_BROKER = `mqtt://${LOCAL_IP}`;
+const LIVE_FEED_TOPIC = "live_feed";
+const ALERT_TOPIC = "ai_alerts";
 
-server.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 Server running at http://${LOCAL_IP}:${PORT}`);
+const ALERT_DIR = "uploads/alerts/";
+if (!fs.existsSync(ALERT_DIR)) {
+    fs.mkdirSync(ALERT_DIR, { recursive: true });
+}
+
+let ioInstance;
+export const setupSocket = (io) => {
+    ioInstance = io;
+};
+
+const client = mqtt.connect(MQTT_BROKER);
+client.on("connect", () => {
+    console.log(`✅ Connected to MQTT Broker at ${MQTT_BROKER}`);
+    client.subscribe(LIVE_FEED_TOPIC);
+    client.subscribe(ALERT_TOPIC);
 });
+
+client.on("message", (topic, message) => {
+    try {
+        if (topic === LIVE_FEED_TOPIC) {
+            const imageData = message.toString();
+            if (ioInstance) {
+                ioInstance.emit("live_feed", imageData);
+            }
+        } else if (topic === ALERT_TOPIC) {
+            const alertData = JSON.parse(message.toString());
+            const imagePath = saveAlertImage(alertData.image);
+            const objects = alertData.objects ? alertData.objects.join(", ") : "Unknown Object";
+
+            const newAlert = { timestamp: alertData.timestamp, objects, image: imagePath };
+            saveAlertToDB(newAlert);
+
+            if (ioInstance) {
+                ioInstance.emit("new_alert", newAlert);
+            }
+        }
+    } catch (err) {
+        console.error("🚨 MQTT ERROR:", err);
+    }
+});
+
+function saveAlertImage(base64String) {
+    const filename = `${Date.now()}.jpg`;
+    const filepath = path.join(ALERT_DIR, filename);
+    fs.writeFileSync(filepath, Buffer.from(base64String, "base64"));
+    return `/uploads/alerts/${filename}`;
+}
+
+function saveAlertToDB(alert) {
+    db.prepare(`INSERT INTO alerts (timestamp, objects, image) VALUES (?, ?, ?)`).run(alert.timestamp, alert.objects, alert.image);
+}

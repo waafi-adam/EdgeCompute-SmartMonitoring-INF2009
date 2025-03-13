@@ -1,3 +1,5 @@
 opencv-python
 paho-mqtt
 numpy
+torch
+torchvision

@@ -1,38 +1,32 @@
+import torch
 import cv2
-import mediapipe as mp
+import numpy as np
 import paho.mqtt.client as mqtt
 import time
 import base64
+import json
 from devices.camera_feed import get_camera_frame
 from mqtt.mqtt_config import BROKER_IP, BROKER_PORT, BROKER_TOPIC_AI_ALERTS
-import json 
 
-# Define Threat Objects
+# Load YOLOv5 model
+model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+
+# Define Threat Objects (Common dangerous items)
 THREAT_OBJECTS = {"knife", "hammer", "gun", "bat", "screwdriver"}
 
 # Initialize MQTT Client
-client = mqtt.Client("ObjectDetector")
+client = mqtt.Client(client_id="ObjectDetector")
 client.connect(BROKER_IP, BROKER_PORT, 60)
-
-# Initialize MediaPipe Object Detection
-mp_objectron = mp.solutions.objectron
-objectron = mp_objectron.Objectron(static_image_mode=False, max_num_objects=5, model_name='Shoe')
 
 def detect_threats():
     while True:
         frame = get_camera_frame()
         if frame is None:
+            print("🚨 ERROR: No camera frame detected. Skipping detection...")
             continue
 
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = objectron.process(rgb_frame)
-
-        detected_objects = []
-        if results.detected_objects:
-            for obj in results.detected_objects:
-                obj_name = obj.label.lower()
-                if obj_name in THREAT_OBJECTS:
-                    detected_objects.append(obj_name)
+        results = model(frame)
+        detected_objects = [obj for obj in results.pandas().xyxy[0]['name'] if obj in THREAT_OBJECTS]
 
         if detected_objects:
             print(f"⚠️ Threat Detected: {detected_objects}")
@@ -51,7 +45,7 @@ def send_alert(frame, detected_objects):
         "image": encoded_image
     }
 
-    return json.dumps(alert_data)  # ✅ Fix: Convert to JSON format
+    return json.dumps(alert_data)
 
 if __name__ == "__main__":
     detect_threats()
