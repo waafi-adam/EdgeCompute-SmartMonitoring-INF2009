@@ -1,0 +1,8 @@
+sounddevice
+wavio
+numpy
+librosa
+matplotlib
+scikit-learn
+resemblyzer
+torch
