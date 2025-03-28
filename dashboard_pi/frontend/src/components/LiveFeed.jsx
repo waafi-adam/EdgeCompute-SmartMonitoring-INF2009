@@ -8,8 +8,12 @@ const LiveFeed = () => {
   useEffect(() => {
     const socket = io(BACKEND_BASE_URL);
 
-    socket.on("live_feed", (imageData) => {
-      setImageSrc(`data:image/jpeg;base64,${imageData}`);
+    // Listen for "live_feed" events from the backend
+    socket.on("live_feed", (payload) => {
+      // Expect payload to be an object with an "image" property
+      if (payload && payload.image) {
+        setImageSrc(`data:image/jpeg;base64,${payload.image}`);
+      }
     });
 
     return () => socket.disconnect();
@@ -18,8 +22,13 @@ const LiveFeed = () => {
   return (
     <div className="bg-white p-4 rounded-lg shadow">
       <h2 className="text-xl font-bold mb-4">Live Video Feed</h2>
-      <div className="w-full h-60 bg-gray-300 flex items-center justify-center">
-        {imageSrc ? <img src={imageSrc} alt="Live Feed" className="w-full h-full object-cover" /> : <p>🔴 Waiting for feed...</p>}
+      {/* Updated height to 600px for a larger live feed box */}
+      <div className="w-full h-[600px] bg-gray-300 flex items-center justify-center">
+        {imageSrc ? (
+          <img src={imageSrc} alt="Live Feed" className="w-full h-full object-cover" />
+        ) : (
+          <p>Waiting for feed...</p>
+        )}
       </div>
     </div>
   );
