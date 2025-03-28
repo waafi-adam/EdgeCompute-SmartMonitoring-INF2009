@@ -5,7 +5,7 @@ from datetime import datetime
 from ultralytics import YOLO
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_FILENAME = "yolov8n.pt"
+MODEL_FILENAME = "best.pt"
 MODEL_PATH = os.path.join(CURRENT_DIR, MODEL_FILENAME)
 OUTPUT_DIR = os.path.join(CURRENT_DIR, "detected_items")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
