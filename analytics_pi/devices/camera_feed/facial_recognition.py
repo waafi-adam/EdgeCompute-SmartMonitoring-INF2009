@@ -48,7 +48,7 @@ def process_frame(frame, model='small', cv_scaler=2):
     scaled_locations = []
 
     for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
-        matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
+        matches = face_recognition.compare_faces(known_face_encodings, face_encoding, tolerance=0.4)
         name = "Unknown"
         face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
         if face_distances.size > 0:
