@@ -1,26 +1,17 @@
-import cv2
-import paho.mqtt.client as mqtt
-import time
-import base64
-import numpy as np
-from .mqtt_config import BROKER_IP, BROKER_PORT, BROKER_TOPIC_LIVE_FEED, BROKER_CLIENT_ID
+import json
+from datetime import datetime
+from .mqtt_config import MQTT_FEED_TOPIC, MQTT_ALERT_TOPIC
 
-# Initialize MQTT client
-client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION1, client_id=BROKER_CLIENT_ID)
-client.connect(BROKER_IP, BROKER_PORT, 60)
+def publish_feed(client, image_base64):
+    payload = json.dumps({
+        "timestamp": datetime.now().isoformat(),
+        "image": image_base64
+    })
+    client.publish(MQTT_FEED_TOPIC, payload)
 
-# Initialize camera
-cap = cv2.VideoCapture(0)  # Use the first available camera
-
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        continue
-
-    # Encode frame as JPEG
-    _, buffer = cv2.imencode(".jpg", frame)
-    encoded_frame = base64.b64encode(buffer).decode()
-
-    # Publish frame to MQTT
-    client.publish(BROKER_TOPIC_LIVE_FEED, encoded_frame)
-    time.sleep(0.1)  # Adjust for FPS control
+def publish_alert(client, message, topic=MQTT_ALERT_TOPIC):
+    payload = json.dumps({
+        "timestamp": datetime.now().isoformat(),
+        "message": message
+    })
+    client.publish(topic, payload)
