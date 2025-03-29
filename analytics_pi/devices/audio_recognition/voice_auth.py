@@ -94,6 +94,43 @@ def check_voice_auth():
 
 
 def voice_loop():
+    print("[VOICE LOOP] Listening for voice activity...")
     while True:
-        check_voice_auth()
-        time.sleep(5)  # slight delay between checks
+        # Short listening window (0.5s)
+        chunk_duration = 0.5
+        chunk = record_audio(duration=chunk_duration)
+
+        if chunk.size == 0:
+            continue
+
+        if is_voice_detected(chunk):
+            print("[VOICE LOOP] Voice detected! Capturing 3s sample...")
+            audio = record_audio(duration=SAMPLE_DURATION)
+            if audio.size == 0:
+                continue
+
+            if not is_voice_detected(audio):
+                print("[INFO] False trigger, discarded.")
+                continue
+
+            # Continue with authentication
+            emb = compute_embedding(audio)
+            similarities = {
+                user: cosine_similarity(emb.reshape(1, -1), ref_emb.reshape(1, -1))[0][0]
+                for user, ref_emb in reference_embeddings.items()
+            }
+
+            best_user = max(similarities, key=similarities.get)
+            best_score = similarities[best_user]
+
+            print(f"[INFO] Highest similarity: {best_user} ({best_score:.3f})")
+            msg = (
+                f"Recognized voice: {best_user}"
+                if best_score >= SIMILARITY_THRESHOLD
+                else "Unrecognized voice detected"
+            )
+
+            publish_alert(mqtt_client, msg, topic=MQTT_VOICE_ALERT_TOPIC)
+            print("[MQTT] Alert published:", msg)
+
+        time.sleep(0.3)  # small cooldown to reduce CPU
