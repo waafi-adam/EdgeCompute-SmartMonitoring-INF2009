@@ -22,7 +22,7 @@ def detect_objects(frame):
     alerts = []
 
     # Perform object detection
-    results = model.predict(source=frame, stream=False, verbose=False)
+    results = model.predict(source=frame, stream=False, verbose=False, conf=0.5)
 
     for result in results:
         for box in result.boxes:
