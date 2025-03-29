@@ -20,7 +20,6 @@ from devices.camera_feed import object_detection as od
 from devices.gesturerecognition import gesture as gesture
 from devices.audio_recognition.voice_auth import voice_loop
 
-
 fr.load_face_data()
 fr.setup_mqtt()
 
@@ -116,6 +115,8 @@ detection_thread.start()
 # Start voice authentication in background
 voice_thread = threading.Thread(target=voice_loop, daemon=True)
 voice_thread.start()
+# # In your main loop or in a thread:
+# threading.Thread(target=voice_loop_worker, daemon=True).start()
 
 
 # ---------- Main Loop (MQTT Publishing) ----------
