@@ -31,9 +31,16 @@ if not reference_embeddings:
 
 def record_audio(duration=SAMPLE_DURATION, sr=TARGET_SR):
     print(f"\nRecording {duration}s of audio. Please speak...")
-    audio = sd.rec(int(sr * duration), samplerate=sr, channels=1, dtype="float32", device=1)
-    sd.wait()  # wait until recording is finished
-    return audio.flatten()
+
+    try:
+        input_device = sd.default.device[0]  # Get system's default input device
+        audio = sd.rec(int(sr * duration), samplerate=sr, channels=1, dtype="float32", device=input_device)
+        sd.wait()
+        return audio.flatten()
+    except Exception as e:
+        print(f"[ERROR] Failed to record audio: {e}")
+        return np.array([])
+
 
 def compute_embedding(audio, sr=TARGET_SR):
     # preprocess_wav accepts a raw numpy array.
