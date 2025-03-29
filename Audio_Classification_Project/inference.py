@@ -39,9 +39,21 @@ def bandpass_filter(data, sr, lowcut=300, highcut=3400, order=5):
 
 def record_audio(duration=SAMPLE_DURATION, sr=TARGET_SR):
     print(f"\nRecording {duration}s of audio. Please speak...")
-    audio = sd.rec(int(sr * duration), samplerate=sr, channels=1, dtype="float32", device=1)
-    sd.wait()  # wait until recording is finished
-    return audio.flatten()
+
+    try:
+        input_device = sd.default.device[0]  # or use `sd.query_devices(kind='input')` to explore
+        info = sd.query_devices(input_device, 'input')
+        channels = info['max_input_channels']
+        if channels < 1:
+            raise ValueError(f"Device {input_device} does not support input channels.")
+
+        audio = sd.rec(int(sr * duration), samplerate=sr, channels=1, dtype="float32", device=input_device)
+        sd.wait()
+        return audio.flatten()
+    except Exception as e:
+        print(f"[ERROR] Failed to record audio: {e}")
+        return np.array([])
+
 
 def compute_embedding(audio, sr=TARGET_SR):
     # Apply bandpass filter to reduce static noise before preprocessing
