@@ -1,17 +1,28 @@
-# build_reference_embeddings.py
 import os
 import numpy as np
 import librosa
 from resemblyzer import VoiceEncoder, preprocess_wav
+from scipy.signal import butter, sosfilt
 
 AUTHORIZED_USERS = ["claire", "claris", "gavin", "waafi", "vianiece"]
-NUM_SAMPLES = 15         # no of recordings per user
+NUM_SAMPLES = 15         # number of recordings per user
 RECORDINGS_DIR = "recordings"  # folder containing recordings
 OUTPUT_DIR = "."         # folder to save the reference embeddings
 TARGET_SR = 16000        # Resemblyzer works well with 16kHz
 
-# initialize VoiceEncoder in cpu mode
+# Initialize VoiceEncoder in CPU mode.
 encoder = VoiceEncoder("cpu")
+
+def bandpass_filter(data, sr, lowcut=300, highcut=3400, order=5):
+    """
+    Applies a Butterworth bandpass filter to keep frequencies between lowcut and highcut.
+    This helps reduce static noise outside the speech frequency range.
+    """
+    nyq = 0.5 * sr
+    low = lowcut / nyq
+    high = highcut / nyq
+    sos = butter(order, [low, high], btype='band', output='sos')
+    return sosfilt(sos, data)
 
 def build_reference_embedding(user, num_samples):
     embeddings = []
@@ -20,13 +31,17 @@ def build_reference_embedding(user, num_samples):
         if not os.path.isfile(wav_path):
             print(f"Warning: missing file: {wav_path}")
             continue
+        # Load audio at the target sample rate
         audio, sr = librosa.load(wav_path, sr=TARGET_SR)
-        wav = preprocess_wav(audio, source_sr=TARGET_SR)
+        # Apply bandpass filter to reduce static noise before processing
+        audio_filtered = bandpass_filter(audio, sr, lowcut=300, highcut=3400, order=5)
+        # Preprocess the filtered audio for the voice encoder
+        wav = preprocess_wav(audio_filtered, source_sr=TARGET_SR)
         emb = encoder.embed_utterance(wav)
         embeddings.append(emb)
     if not embeddings:
         return None
-    return np.mean(embeddings, axis=0) \
+    return np.mean(embeddings, axis=0)
 
 def main():
     for user in AUTHORIZED_USERS:
