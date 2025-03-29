@@ -18,6 +18,8 @@ from mqtt.mqtt_config import MQTT_FACE_ALERT_TOPIC, MQTT_OBJECT_ALERT_TOPIC, MQT
 from devices.camera_feed import facial_recognition as fr
 from devices.camera_feed import object_detection as od
 from devices.gesturerecognition import gesture as gesture
+from devices.audio_recognition.voice_auth import voice_loop
+
 
 fr.load_face_data()
 fr.setup_mqtt()
@@ -111,6 +113,10 @@ def detection_worker():
 # Start detection in background
 detection_thread = threading.Thread(target=detection_worker, daemon=True)
 detection_thread.start()
+# Start voice authentication in background
+voice_thread = threading.Thread(target=voice_loop, daemon=True)
+voice_thread.start()
+
 
 # ---------- Main Loop (MQTT Publishing) ----------
 frame_count = 0
@@ -118,7 +124,7 @@ frame_count = 0
 while True:
     frame_count += 1
     time.sleep(0.05)  # ~20 FPS max render loop
-
+    
     with detection_lock:
         display_frame = latest_annotated_frame.copy() if latest_annotated_frame is not None else None
         face_names = latest_face_names[:]
@@ -149,6 +155,9 @@ while True:
                 print("[ERROR] Failed to publish face alert:", e)
 
         last_alert_time = current_time
+    
+
+
 
 video_stream.stop()
 mqtt_client.disconnect()
