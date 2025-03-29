@@ -60,15 +60,25 @@ def compute_embedding(audio, sr=TARGET_SR):
     wav = preprocess_wav(filtered_audio, source_sr=sr)
     return encoder.embed_utterance(wav)
 
+def is_voice_detected(audio, threshold=0.01):
+    # Check if energy in the speech range is strong enough
+    energy = np.mean(np.square(audio))
+    return energy > threshold
+
 def check_voice_auth():
     audio = record_audio()
-    if np.max(np.abs(audio)) < SILENCE_THRESHOLD:
-        print("[INFO] Silent or too soft.")
+    if audio.size == 0:
+        return
+
+    if not is_voice_detected(audio, threshold=SILENCE_THRESHOLD):
+        print("[INFO] No voice detected.")
         return
 
     emb = compute_embedding(audio)
-    similarities = {user: cosine_similarity(emb.reshape(1, -1), ref_emb.reshape(1, -1))[0][0]
-                    for user, ref_emb in reference_embeddings.items()}
+    similarities = {
+        user: cosine_similarity(emb.reshape(1, -1), ref_emb.reshape(1, -1))[0][0]
+        for user, ref_emb in reference_embeddings.items()
+    }
 
     best_user = max(similarities, key=similarities.get)
     best_score = similarities[best_user]
@@ -81,6 +91,7 @@ def check_voice_auth():
 
     publish_alert(mqtt_client, msg, topic=MQTT_VOICE_ALERT_TOPIC)
     print("[MQTT] Alert published:", msg)
+
 
 def voice_loop():
     while True:
