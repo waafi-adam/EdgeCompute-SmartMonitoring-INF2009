@@ -15,6 +15,7 @@ SIMILARITY_THRESHOLD = 0.8
 SAMPLE_DURATION = 3
 TARGET_SR = 16000
 SILENCE_THRESHOLD = 0.01
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # MQTT Setup
 mqtt_client = connect_mqtt()
@@ -26,7 +27,7 @@ encoder = VoiceEncoder("cpu")
 # Load reference embeddings
 reference_embeddings = {}
 for user in AUTHORIZED_USERS:
-    emb_path = f"ref_{user}.npy"
+    emb_path = os.path.join(CURRENT_DIR, f"ref_{user}.npy")
     if os.path.isfile(emb_path):
         reference_embeddings[user] = np.load(emb_path)
         print(f"[INFO] Loaded reference for {user}")
