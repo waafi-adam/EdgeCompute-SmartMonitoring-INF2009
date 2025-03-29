@@ -7,7 +7,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 AUTHORIZED_USERS = ["claire", "claris", "gavin", "waafi", "vianiece"]
 
-SIMILARITY_THRESHOLD = 0.75
+SIMILARITY_THRESHOLD = 0.7
 SAMPLE_DURATION = 3          #time to record audio
 TARGET_SR = 16000            # Resemblyzer default sample rate (16kHz)
 SILENCE_THRESHOLD = 0.01     # minimum audio amplitude to consider as speech
