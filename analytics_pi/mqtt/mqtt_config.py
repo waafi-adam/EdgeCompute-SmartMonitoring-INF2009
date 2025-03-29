@@ -8,7 +8,7 @@ MQTT_ALERT_TOPIC = "alerts"
 MQTT_FACE_ALERT_TOPIC = "alerts/face"
 MQTT_OBJECT_ALERT_TOPIC = "alerts/object"
 MQTT_GESTURE_ALERT_TOPIC = "alerts/gesture"
-
+MQTT_VOICE_ALERT_TOPIC = "alerts/voice"
 
 def connect_mqtt():
     client = mqtt.Client()

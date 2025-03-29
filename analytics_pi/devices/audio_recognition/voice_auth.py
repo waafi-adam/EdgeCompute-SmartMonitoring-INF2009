@@ -8,7 +8,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from scipy.signal import butter, sosfilt
 import os
 from mqtt.mqtt_live_feed import publish_alert
-from mqtt.mqtt_config import connect_mqtt, MQTT_ALERT_TOPIC
+from mqtt.mqtt_config import connect_mqtt, MQTT_VOICE_ALERT_TOPIC
 
 AUTHORIZED_USERS = ["claire", "claris", "gavin", "waafi", "vianiece"]
 SIMILARITY_THRESHOLD = 0.8
@@ -78,10 +78,10 @@ def check_voice_auth():
     else:
         msg = "Unrecognized voice detected"
 
-    publish_alert(mqtt_client, msg, topic=MQTT_ALERT_TOPIC)
+    publish_alert(mqtt_client, msg, topic=MQTT_VOICE_ALERT_TOPIC)
     print("[MQTT] Alert published:", msg)
 
 def voice_loop():
     while True:
-        voice_auth.check_voice_auth()
+        check_voice_auth()
         time.sleep(5)  # slight delay between checks

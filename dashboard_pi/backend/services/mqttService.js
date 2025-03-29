@@ -26,7 +26,7 @@ client.on("connect", () => {
   });
 
     // Subscribe to all alert topics
-  const alertTopics = ["alerts/face", "alerts/object", "alerts/gesture"];
+    const alertTopics = ["alerts/face", "alerts/object", "alerts/gesture", "alerts/voice"];
   alertTopics.forEach((topic) => {
     client.subscribe(topic, (err) => {
       if (err) {
@@ -48,10 +48,11 @@ client.on("message", (topic, message) => {
       } else if (
         topic === "alerts/face" ||
         topic === "alerts/object" ||
-        topic === "alerts/gesture"
+        topic === "alerts/gesture" ||
+        topic === "alerts/voice"
       ) {
         ioInstance.emit("alert", payload);
-      }
+      }      
     }
   } catch (err) {
     console.error("Error parsing MQTT message:", err);
