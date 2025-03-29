@@ -11,7 +11,7 @@ from mqtt.mqtt_live_feed import publish_alert
 from mqtt.mqtt_config import connect_mqtt, MQTT_VOICE_ALERT_TOPIC
 
 AUTHORIZED_USERS = ["claire", "claris", "gavin", "waafi", "vianiece"]
-SIMILARITY_THRESHOLD = 0.8
+SIMILARITY_THRESHOLD = 0.7
 SAMPLE_DURATION = 3
 TARGET_SR = 16000
 SILENCE_THRESHOLD = 0.01
@@ -56,7 +56,7 @@ def record_audio(duration=SAMPLE_DURATION, sr=TARGET_SR):
         return np.array([])
 
 def compute_embedding(audio, sr=TARGET_SR):
-    filtered_audio = bandpass_filter(audio, sr)
+    filtered_audio = bandpass_filter(audio, sr, lowcut=300, highcut=3400, order=5)
     wav = preprocess_wav(filtered_audio, source_sr=sr)
     return encoder.embed_utterance(wav)
 
