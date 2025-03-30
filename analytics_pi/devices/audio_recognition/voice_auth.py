@@ -69,10 +69,12 @@ def compute_embedding(audio, sr=TARGET_SR):
     emb = encoder.embed_utterance(wav)
     return emb
 
-def is_voice_detected(audio, threshold=0.01):
-    energy = np.sqrt(np.mean(np.square(audio)))
-    print(f"[DEBUG] Detected RMS energy: {energy:.5f}")
+def is_voice_detected(audio, threshold=0.25):
+    filtered = bandpass_filter(audio, sr=TARGET_SR, lowcut=300, highcut=3400)
+    energy = np.sqrt(np.mean(np.square(filtered)))
+    print(f"[DEBUG] Filtered RMS energy: {energy:.5f}")
     return energy > threshold
+
 
 
 
