@@ -69,7 +69,7 @@ def compute_embedding(audio, sr=TARGET_SR):
     emb = encoder.embed_utterance(wav)
     return emb
 
-def is_voice_detected(audio, threshold=0.01):
+def is_voice_detected(audio, threshold=0.04):
     # Check if energy in the speech range is strong enough
     energy = np.max(np.abs(audio))
     return energy > threshold
@@ -81,11 +81,11 @@ def authenticate_multi_attempt(num_attempts=3):
     for attempt in range(num_attempts):
         print(f"[VOICE LOOP] Recording attempt {attempt + 1}/{num_attempts}...")
         audio = record_audio(duration=SAMPLE_DURATION)
-        if audio.size == 0 or not is_voice_detected(audio, SILENCE_THRESHOLD):
+        if audio.size == 0 or not is_voice_detected(audio):
             print("[INFO] No valid voice detected. Skipping this attempt.")
             continue
 
-        emb = compute_embedding(audio, SILENCE_THRESHOLD)
+        emb = compute_embedding(audio)
         collected_embeddings.append(emb)
         time.sleep(0.5)  # slight pause between attempts
 
