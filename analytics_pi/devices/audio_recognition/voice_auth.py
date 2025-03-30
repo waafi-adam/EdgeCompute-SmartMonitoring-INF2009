@@ -14,7 +14,7 @@ AUTHORIZED_USERS = ["claire", "claris", "gavin", "waafi", "vianiece"]
 SIMILARITY_THRESHOLD = 0.7
 SAMPLE_DURATION = 3
 TARGET_SR = 16000
-SILENCE_THRESHOLD = 0.05
+SILENCE_THRESHOLD = 0.2
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # MQTT Setup
