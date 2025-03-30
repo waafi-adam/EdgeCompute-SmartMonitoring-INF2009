@@ -14,7 +14,7 @@ AUTHORIZED_USERS = ["claire", "claris", "gavin", "waafi", "vianiece"]
 SIMILARITY_THRESHOLD = 0.7
 SAMPLE_DURATION = 3
 TARGET_SR = 16000
-SILENCE_THRESHOLD = 0.01
+SILENCE_THRESHOLD = 0.05
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # MQTT Setup
@@ -81,11 +81,11 @@ def authenticate_multi_attempt(num_attempts=3):
     for attempt in range(num_attempts):
         print(f"[VOICE LOOP] Recording attempt {attempt + 1}/{num_attempts}...")
         audio = record_audio(duration=SAMPLE_DURATION)
-        if audio.size == 0 or not is_voice_detected(audio):
+        if audio.size == 0 or not is_voice_detected(audio, SILENCE_THRESHOLD):
             print("[INFO] No valid voice detected. Skipping this attempt.")
             continue
 
-        emb = compute_embedding(audio)
+        emb = compute_embedding(audio, SILENCE_THRESHOLD)
         collected_embeddings.append(emb)
         time.sleep(0.5)  # slight pause between attempts
 
