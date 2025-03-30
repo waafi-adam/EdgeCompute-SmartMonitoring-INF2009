@@ -90,7 +90,7 @@ def process_next(mqtt_client):
 
         now = time.time()
         if now - last_gesture_time > GESTURE_COOLDOWN:
-#             print(f"[GESTURE] Detected: {prediction}")
+            print(f"[GESTURE] Detected: {prediction}")
             try:
                 publish_gesture_alert(mqtt_client, "Movement detected!")
                 last_gesture_time = now
