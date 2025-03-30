@@ -69,10 +69,11 @@ def compute_embedding(audio, sr=TARGET_SR):
     emb = encoder.embed_utterance(wav)
     return emb
 
-def is_voice_detected(audio, threshold=0.04):
-    # Check if energy in the speech range is strong enough
-    energy = np.max(np.abs(audio))
+def is_voice_detected(audio, threshold=0.01):
+    energy = np.sqrt(np.mean(np.square(audio)))
+    print(f"[DEBUG] Detected RMS energy: {energy:.5f}")
     return energy > threshold
+
 
 
 def authenticate_multi_attempt(num_attempts=3):
