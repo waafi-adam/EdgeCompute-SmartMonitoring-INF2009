@@ -38,85 +38,82 @@ if not reference_embeddings:
     raise RuntimeError("[ERROR] No reference embeddings available!")
 
 def bandpass_filter(data, sr, lowcut=300, highcut=3400, order=5):
+    """
+    Applies a Butterworth bandpass filter to keep frequencies between lowcut and highcut.
+    """
     nyq = 0.5 * sr
-    sos = butter(order, [lowcut / nyq, highcut / nyq], btype='band', output='sos')
+    low = lowcut / nyq
+    high = highcut / nyq
+    sos = butter(order, [low, high], btype='band', output='sos')
     return sosfilt(sos, data)
 
 def record_audio(duration=SAMPLE_DURATION, sr=TARGET_SR):
     try:
-        input_device = sd.default.device[0]
+        input_device = sd.default.device[0]  # or use `sd.query_devices(kind='input')` to explore
         info = sd.query_devices(input_device, 'input')
-        if info['max_input_channels'] < 1:
-            raise ValueError("Input device has no channels")
+        channels = info['max_input_channels']
+        if channels < 1:
+            raise ValueError(f"Device {input_device} does not support input channels.")
+
         audio = sd.rec(int(sr * duration), samplerate=sr, channels=1, dtype="float32", device=input_device)
         sd.wait()
         return audio.flatten()
     except Exception as e:
-        print(f"[ERROR] Audio recording failed: {e}")
+        print(f"[ERROR] Failed to record audio: {e}")
         return np.array([])
 
 def compute_embedding(audio, sr=TARGET_SR):
+    # Apply bandpass filter to reduce static noise before preprocessing
     filtered_audio = bandpass_filter(audio, sr, lowcut=300, highcut=3400, order=5)
     wav = preprocess_wav(filtered_audio, source_sr=sr)
-    return encoder.embed_utterance(wav)
+    emb = encoder.embed_utterance(wav)
+    return emb
 
 def is_voice_detected(audio, threshold=0.01):
     # Check if energy in the speech range is strong enough
-    energy = np.mean(np.square(audio))
+    energy = np.max(np.abs(audio))
     return energy > threshold
 
-def check_voice_auth():
-    audio = record_audio()
-    if audio.size == 0:
-        return
 
-    if not is_voice_detected(audio, threshold=SILENCE_THRESHOLD):
-        print("[INFO] No voice detected.")
-        return
+def authenticate_multi_attempt(num_attempts=3):
+    collected_embeddings = []
 
-    emb = compute_embedding(audio)
-    similarities = {
-        user: cosine_similarity(emb.reshape(1, -1), ref_emb.reshape(1, -1))[0][0]
-        for user, ref_emb in reference_embeddings.items()
-    }
+    for attempt in range(num_attempts):
+        print(f"[VOICE LOOP] Recording attempt {attempt + 1}/{num_attempts}...")
+        audio = record_audio(duration=SAMPLE_DURATION)
+        if audio.size == 0 or not is_voice_detected(audio):
+            print("[INFO] No valid voice detected. Skipping this attempt.")
+            continue
 
-    best_user = max(similarities, key=similarities.get)
-    best_score = similarities[best_user]
+        emb = compute_embedding(audio)
+        collected_embeddings.append(emb)
+        time.sleep(0.5)  # slight pause between attempts
 
-    print(f"[INFO] Highest similarity: {best_user} ({best_score:.3f})")
-    if best_score >= SIMILARITY_THRESHOLD:
-        msg = f"Recognized voice: {best_user}"
-    else:
-        msg = "Unrecognized voice detected"
+    if not collected_embeddings:
+        print("[WARN] No usable recordings captured.")
+        return None
 
-    publish_alert(mqtt_client, msg, topic=MQTT_VOICE_ALERT_TOPIC)
-    print("[MQTT] Alert published:", msg)
+    return np.mean(collected_embeddings, axis=0)
 
 
 def voice_loop():
     print("[VOICE LOOP] Listening for voice activity...")
     while True:
-        # Short listening window (0.5s)
-        chunk_duration = 0.5
-        chunk = record_audio(duration=chunk_duration)
+        chunk = record_audio(duration=0.5)
 
         if chunk.size == 0:
             continue
 
         if is_voice_detected(chunk):
-            print("[VOICE LOOP] Voice detected! Capturing 3s sample...")
-            audio = record_audio(duration=SAMPLE_DURATION)
-            if audio.size == 0:
-                continue
+            print("[VOICE LOOP] Voice detected! Performing multi-attempt auth...")
 
-            if not is_voice_detected(audio):
-                print("[INFO] False trigger, discarded.")
-                continue
+            avg_emb = authenticate_multi_attempt(num_attempts=3)
+            if avg_emb is None:
+                continue  # Skip if no usable attempts
 
-            # Continue with authentication
-            emb = compute_embedding(audio)
+            # Compare to reference embeddings
             similarities = {
-                user: cosine_similarity(emb.reshape(1, -1), ref_emb.reshape(1, -1))[0][0]
+                user: cosine_similarity(avg_emb.reshape(1, -1), ref_emb.reshape(1, -1))[0][0]
                 for user, ref_emb in reference_embeddings.items()
             }
 
@@ -133,4 +130,4 @@ def voice_loop():
             publish_alert(mqtt_client, msg, topic=MQTT_VOICE_ALERT_TOPIC)
             print("[MQTT] Alert published:", msg)
 
-        time.sleep(0.3)  # small cooldown to reduce CPU
+        time.sleep(0.3)  # small cooldown
